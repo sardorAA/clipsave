@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClipSave - скачать видео</title>
+    <meta
+      name="description"
+      content="Аккуратный загрузчик для прямых видео-ссылок и легальной обработки Instagram и TikTok контента."
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23080b14'/%3E%3Cpath d='M20 18h24a6 6 0 0 1 6 6v16a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V24a6 6 0 0 1 6-6Z' fill='%2322d3ee'/%3E%3Cpath d='M28 25v14l12-7-12-7Z' fill='%23080b14'/%3E%3Cpath d='M32 48v8m0 0-7-7m7 7 7-7' stroke='%23f8fafc' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #090b10;
+        --panel: #121722;
+        --panel-strong: #171f2f;
+        --text: #eef5ff;
+        --muted: #9ba9bd;
+        --line: rgba(255, 255, 255, 0.12);
+        --cyan: #22d3ee;
+        --mint: #6ee7b7;
+        --rose: #fb7185;
+        --amber: #fbbf24;
+        --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(34, 211, 238, 0.18), transparent 30rem),
+          linear-gradient(135deg, #090b10 0%, #101521 48%, #091018 100%);
+        color: var(--text);
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .shell {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border: 1px solid rgba(34, 211, 238, 0.35);
+        border-radius: 8px;
+        background: #0c1420;
+        box-shadow: inset 0 0 28px rgba(34, 211, 238, 0.14);
+      }
+
+      .privacy-note {
+        max-width: 460px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+        text-align: right;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 22px;
+        align-items: stretch;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(18, 23, 34, 0.88);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .download-panel {
+        padding: 26px;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin: 0 0 12px;
+        font-size: clamp(2.25rem, 5vw, 4.8rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      .lead {
+        max-width: 680px;
+        margin: 0 0 24px;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.55;
+      }
+
+      .platforms {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .platform {
+        display: flex;
+        min-height: 56px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0e1420;
+        color: var(--text);
+        cursor: pointer;
+        transition:
+          border-color 160ms ease,
+          background 160ms ease,
+          transform 160ms ease;
+      }
+
+      .platform:hover,
+      .platform:focus-visible {
+        border-color: rgba(34, 211, 238, 0.7);
+        outline: none;
+      }
+
+      .platform[aria-pressed="true"] {
+        border-color: rgba(110, 231, 183, 0.8);
+        background: linear-gradient(180deg, rgba(34, 211, 238, 0.17), rgba(110, 231, 183, 0.1));
+      }
+
+      .url-form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .url-input {
+        width: 100%;
+        min-height: 58px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #080d15;
+        color: var(--text);
+        padding: 0 16px;
+        outline: none;
+      }
+
+      .url-input:focus {
+        border-color: rgba(34, 211, 238, 0.8);
+        box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.14);
+      }
+
+      .primary {
+        display: inline-flex;
+        min-height: 58px;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 0;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--cyan), var(--mint));
+        color: #031018;
+        cursor: pointer;
+        font-weight: 800;
+        padding: 0 20px;
+      }
+
+      .primary:focus-visible {
+        outline: 3px solid rgba(34, 211, 238, 0.42);
+        outline-offset: 2px;
+      }
+
+      .hint {
+        min-height: 22px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .status {
+        display: grid;
+        gap: 16px;
+        margin-top: 22px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0b111b;
+      }
+
+      .status-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .status-title {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 30px;
+        border-radius: 999px;
+        padding: 0 12px;
+        background: rgba(251, 191, 36, 0.14);
+        color: #fde68a;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .result {
+        display: grid;
+        gap: 10px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .download-link {
+        display: none;
+        width: fit-content;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid rgba(110, 231, 183, 0.48);
+        border-radius: 8px;
+        color: var(--mint);
+        padding: 0 14px;
+        text-decoration: none;
+      }
+
+      .download-link.is-visible {
+        display: inline-flex;
+      }
+
+      .side {
+        display: grid;
+        gap: 14px;
+      }
+
+      .mini-panel {
+        padding: 20px;
+      }
+
+      .mini-panel h2 {
+        margin: 0 0 10px;
+        font-size: 20px;
+      }
+
+      .mini-panel p,
+      .mini-panel li {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .mini-panel ul {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .quality-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .quality {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0d1420;
+        padding: 14px;
+      }
+
+      .quality strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .quality span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .footer {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .icon {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 860px) {
+        .topbar,
+        .workspace,
+        .url-form {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar {
+          align-items: flex-start;
+        }
+
+        .privacy-note {
+          text-align: left;
+        }
+
+        .workspace {
+          display: grid;
+        }
+
+        .url-form {
+          display: grid;
+        }
+
+        .primary {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .shell {
+          width: min(100% - 20px, 1120px);
+          padding: 18px 0;
+        }
+
+        .download-panel,
+        .mini-panel {
+          padding: 16px;
+        }
+
+        .platforms,
+        .quality-grid {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 2.35rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand" aria-label="ClipSave">
+          <span class="brand-mark" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+              <path d="M8 5v14l11-7L8 5Z" fill="#22d3ee" />
+            </svg>
+          </span>
+          <span>ClipSave</span>
+        </div>
+        <p class="privacy-note">
+          Скачивайте только свои видео или контент, на который у вас есть разрешение.
+        </p>
+      </header>
+
+      <section class="workspace" aria-label="Загрузчик видео">
+        <div class="panel download-panel">
+          <h1>Скачивание видео без лишних шагов</h1>
+          <p class="lead">
+            Вставьте ссылку на видео. Прямые MP4/WebM ссылки можно скачать сразу, а Instagram и TikTok готовы к подключению через официальный или разрешенный серверный источник.
+          </p>
+
+          <div class="platforms" role="group" aria-label="Платформа">
+            <button class="platform" type="button" data-platform="auto" aria-pressed="true">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 12h16M12 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              Авто
+            </button>
+            <button class="platform" type="button" data-platform="instagram" aria-pressed="false">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="5" y="5" width="14" height="14" rx="4" stroke="currentColor" stroke-width="2" />
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                <circle cx="16.5" cy="7.5" r="1" fill="currentColor" />
+              </svg>
+              Instagram
+            </button>
+            <button class="platform" type="button" data-platform="tiktok" aria-pressed="false">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M14 4v10.5a4.5 4.5 0 1 1-3-4.24" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <path d="M14 5c1.2 2.7 3 4 5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              TikTok
+            </button>
+          </div>
+
+          <form class="url-form" id="downloadForm">
+            <label class="sr-only" for="videoUrl">Ссылка на видео</label>
+            <input
+              class="url-input"
+              id="videoUrl"
+              name="videoUrl"
+              type="url"
+              inputmode="url"
+              autocomplete="url"
+              placeholder="https://www.tiktok.com/... или https://.../video.mp4"
+              required
+            />
+            <button class="primary" type="submit">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 4v10m0 0 4-4m-4 4-4-4M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Проверить
+            </button>
+          </form>
+          <div class="hint" id="hint">Поддерживаются прямые видео-файлы. Ссылки соцсетей требуют серверной интеграции.</div>
+
+          <section class="status" aria-live="polite" aria-label="Результат проверки">
+            <div class="status-head">
+              <h2 class="status-title" id="statusTitle">Ожидаю ссылку</h2>
+              <span class="badge" id="statusBadge">Готово</span>
+            </div>
+            <div class="result" id="resultText">
+              Вставьте адрес видео, и сайт определит, можно ли скачать файл прямо из браузера.
+            </div>
+            <a class="download-link" id="downloadLink" href="#" download>
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Скачать файл
+            </a>
+          </section>
+        </div>
+
+        <aside class="side" aria-label="Информация">
+          <section class="panel mini-panel">
+            <h2>Как это работает</h2>
+            <ul>
+              <li>Прямая ссылка на видео скачивается сразу.</li>
+              <li>Instagram и TikTok определяются автоматически.</li>
+              <li>Для соцсетей нужен backend с разрешенным доступом к файлу.</li>
+            </ul>
+          </section>
+
+          <section class="panel mini-panel">
+            <h2>Форматы</h2>
+            <div class="quality-grid" aria-label="Поддерживаемые варианты">
+              <div class="quality">
+                <strong>MP4</strong>
+                <span>самый удобный вариант</span>
+              </div>
+              <div class="quality">
+                <strong>WebM</strong>
+                <span>часто работает в браузере</span>
+              </div>
+              <div class="quality">
+                <strong>MOV</strong>
+                <span>для исходников с телефона</span>
+              </div>
+              <div class="quality">
+                <strong>API</strong>
+                <span>для Instagram и TikTok</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel mini-panel">
+            <h2>Следующий шаг</h2>
+            <p>
+              Чтобы включить настоящее скачивание из Instagram и TikTok, подключается серверный обработчик с официальным API, токеном или вашим разрешенным источником видео.
+            </p>
+          </section>
+        </aside>
+      </section>
+
+      <p class="footer">
+        ClipSave не обходит защиту платформ и не помогает скачивать чужой контент без разрешения.
+      </p>
+    </main>
+
+    <script>
+      const platforms = document.querySelectorAll(".platform");
+      const form = document.querySelector("#downloadForm");
+      const input = document.querySelector("#videoUrl");
+      const statusTitle = document.querySelector("#statusTitle");
+      const statusBadge = document.querySelector("#statusBadge");
+      const resultText = document.querySelector("#resultText");
+      const downloadLink = document.querySelector("#downloadLink");
+      let selectedPlatform = "auto";
+
+      function setStatus(title, badge, message, downloadUrl = "") {
+        statusTitle.textContent = title;
+        statusBadge.textContent = badge;
+        resultText.textContent = message;
+        if (downloadUrl) {
+          downloadLink.href = downloadUrl;
+          downloadLink.classList.add("is-visible");
+        } else {
+          downloadLink.removeAttribute("href");
+          downloadLink.classList.remove("is-visible");
+        }
+      }
+
+      function detectPlatform(url) {
+        const host = url.hostname.replace(/^www\./, "");
+        if (host.includes("instagram.com")) return "instagram";
+        if (host.includes("tiktok.com") || host.includes("vm.tiktok.com")) return "tiktok";
+        if (/\.(mp4|webm|mov)(\?.*)?$/i.test(url.href)) return "direct";
+        return selectedPlatform === "auto" ? "unknown" : selectedPlatform;
+      }
+
+      platforms.forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedPlatform = button.dataset.platform;
+          platforms.forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+        });
+      });
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        let url;
+        try {
+          url = new URL(input.value.trim());
+        } catch {
+          setStatus("Ссылка не распознана", "Ошибка", "Проверьте адрес: он должен начинаться с http:// или https://.");
+          return;
+        }
+
+        const type = detectPlatform(url);
+        if (type === "direct") {
+          setStatus(
+            "Видео готово",
+            "Можно скачать",
+            "Это прямая ссылка на видеофайл. Если сервер разрешает скачивание, кнопка ниже сохранит файл на устройство.",
+            url.href
+          );
+          return;
+        }
+
+        if (type === "instagram" || type === "tiktok") {
+          const name = type === "instagram" ? "Instagram" : "TikTok";
+          setStatus(
+            `${name} ссылка принята`,
+            "Нужен backend",
+            `Для настоящего скачивания из ${name} нужен серверный обработчик с разрешенным доступом к видео. Интерфейс готов: сюда можно подключить API и вернуть прямую ссылку на файл.`
+          );
+          return;
+        }
+
+        setStatus(
+          "Неизвестный источник",
+          "Проверьте ссылку",
+          "Сайт пока скачивает прямые видео-файлы и распознает Instagram/TikTok. Для других источников можно добавить отдельный обработчик."
+        );
+      });
+    </script>
+  </body>
+</html>
