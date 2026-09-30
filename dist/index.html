@@ -114,8 +114,8 @@
       h1 {
         max-width: 760px;
         margin: 0 0 12px;
-        font-size: clamp(2.25rem, 5vw, 4.8rem);
-        line-height: 0.95;
+        font-size: 2.5rem;
+        line-height: 1.1;
         letter-spacing: 0;
       }
 
@@ -271,6 +271,11 @@
         display: inline-flex;
       }
 
+      [hidden] { display: none !important; }
+      .primary:disabled { opacity: 0.6; cursor: wait; }
+      .result { overflow-wrap: anywhere; }
+      .media-select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: #0e1420; color: var(--text); font: inherit; }
+
       .side {
         display: grid;
         gap: 14px;
@@ -413,9 +418,9 @@
 
       <section class="workspace" aria-label="Загрузчик видео">
         <div class="panel download-panel">
-          <h1>Скачивание видео без лишних шагов</h1>
+          <h1>Скачать видео</h1>
           <p class="lead">
-            Вставьте ссылку на видео. Прямые MP4/WebM ссылки можно скачать сразу, а Instagram и TikTok готовы к подключению через официальный или разрешенный серверный источник.
+            Instagram, TikTok и прямые ссылки на видеофайлы.
           </p>
 
           <div class="platforms" role="group" aria-label="Платформа">
@@ -458,10 +463,10 @@
               <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 4v10m0 0 4-4m-4 4-4-4M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              Проверить
+              <span id="submitLabel">Найти видео</span>
             </button>
           </form>
-          <div class="hint" id="hint">Поддерживаются прямые видео-файлы. Ссылки соцсетей требуют серверной интеграции.</div>
+          <div class="hint" id="hint">Проверяем доступность сервиса…</div>
 
           <section class="status" aria-live="polite" aria-label="Результат проверки">
             <div class="status-head">
@@ -469,8 +474,10 @@
               <span class="badge" id="statusBadge">Готово</span>
             </div>
             <div class="result" id="resultText">
-              Вставьте адрес видео, и сайт определит, можно ли скачать файл прямо из браузера.
+              Найденные видео появятся здесь.
             </div>
+            <label for="mediaSelect" id="mediaLabel" hidden>Видео в публикации</label>
+            <select class="media-select" id="mediaSelect" hidden></select>
             <a class="download-link" id="downloadLink" href="#" download>
               <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -482,11 +489,11 @@
 
         <aside class="side" aria-label="Информация">
           <section class="panel mini-panel">
-            <h2>Как это работает</h2>
+            <h2>Источники</h2>
             <ul>
-              <li>Прямая ссылка на видео скачивается сразу.</li>
-              <li>Instagram и TikTok определяются автоматически.</li>
-              <li>Для соцсетей нужен backend с разрешенным доступом к файлу.</li>
+              <li>Instagram: видео и Reels.</li>
+              <li>TikTok: видео и короткие ссылки.</li>
+              <li>Прямые ссылки: MP4, WebM, MOV.</li>
             </ul>
           </section>
 
@@ -506,16 +513,16 @@
                 <span>для исходников с телефона</span>
               </div>
               <div class="quality">
-                <strong>API</strong>
-                <span>для Instagram и TikTok</span>
+                <strong>250 МБ</strong>
+                <span>максимальный размер видео из соцсетей</span>
               </div>
             </div>
           </section>
 
           <section class="panel mini-panel">
-            <h2>Следующий шаг</h2>
+            <h2>Доступность</h2>
             <p>
-              Чтобы включить настоящее скачивание из Instagram и TikTok, подключается серверный обработчик с официальным API, токеном или вашим разрешенным источником видео.
+              Только открытые публикации. Закрытые и удалённые видео недоступны. Ссылка на скачивание действует 10 минут.
             </p>
           </section>
         </aside>
@@ -526,84 +533,6 @@
       </p>
     </main>
 
-    <script>
-      const platforms = document.querySelectorAll(".platform");
-      const form = document.querySelector("#downloadForm");
-      const input = document.querySelector("#videoUrl");
-      const statusTitle = document.querySelector("#statusTitle");
-      const statusBadge = document.querySelector("#statusBadge");
-      const resultText = document.querySelector("#resultText");
-      const downloadLink = document.querySelector("#downloadLink");
-      let selectedPlatform = "auto";
-
-      function setStatus(title, badge, message, downloadUrl = "") {
-        statusTitle.textContent = title;
-        statusBadge.textContent = badge;
-        resultText.textContent = message;
-        if (downloadUrl) {
-          downloadLink.href = downloadUrl;
-          downloadLink.classList.add("is-visible");
-        } else {
-          downloadLink.removeAttribute("href");
-          downloadLink.classList.remove("is-visible");
-        }
-      }
-
-      function detectPlatform(url) {
-        const host = url.hostname.replace(/^www\./, "");
-        if (host.includes("instagram.com")) return "instagram";
-        if (host.includes("tiktok.com") || host.includes("vm.tiktok.com")) return "tiktok";
-        if (/\.(mp4|webm|mov)(\?.*)?$/i.test(url.href)) return "direct";
-        return selectedPlatform === "auto" ? "unknown" : selectedPlatform;
-      }
-
-      platforms.forEach((button) => {
-        button.addEventListener("click", () => {
-          selectedPlatform = button.dataset.platform;
-          platforms.forEach((item) => {
-            item.setAttribute("aria-pressed", String(item === button));
-          });
-        });
-      });
-
-      form.addEventListener("submit", (event) => {
-        event.preventDefault();
-
-        let url;
-        try {
-          url = new URL(input.value.trim());
-        } catch {
-          setStatus("Ссылка не распознана", "Ошибка", "Проверьте адрес: он должен начинаться с http:// или https://.");
-          return;
-        }
-
-        const type = detectPlatform(url);
-        if (type === "direct") {
-          setStatus(
-            "Видео готово",
-            "Можно скачать",
-            "Это прямая ссылка на видеофайл. Если сервер разрешает скачивание, кнопка ниже сохранит файл на устройство.",
-            url.href
-          );
-          return;
-        }
-
-        if (type === "instagram" || type === "tiktok") {
-          const name = type === "instagram" ? "Instagram" : "TikTok";
-          setStatus(
-            `${name} ссылка принята`,
-            "Нужен backend",
-            `Для настоящего скачивания из ${name} нужен серверный обработчик с разрешенным доступом к видео. Интерфейс готов: сюда можно подключить API и вернуть прямую ссылку на файл.`
-          );
-          return;
-        }
-
-        setStatus(
-          "Неизвестный источник",
-          "Проверьте ссылку",
-          "Сайт пока скачивает прямые видео-файлы и распознает Instagram/TikTok. Для других источников можно добавить отдельный обработчик."
-        );
-      });
-    </script>
+    <script src="/app.js" defer></script>
   </body>
 </html>
